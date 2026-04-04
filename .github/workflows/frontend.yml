@@ -11,7 +11,7 @@ on:
       - "frontend/**"
       - ".github/workflows/frontend.yml"
     branches: [ 'main' ]
-  
+  workflow_dispatch: # Allows you to trigger the action manually
 
 permissions: read-all
 
@@ -23,17 +23,14 @@ jobs:
         working-directory: 'frontend'
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version: "20" # Using LTS for stability
           cache: "npm"
           cache-dependency-path: 'frontend/package-lock.json'
-
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
-
       - name: Run ESLint
         run: npm run lint
 
@@ -44,63 +41,57 @@ jobs:
         working-directory: 'frontend'
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version: "20"
           cache: "npm"
           cache-dependency-path: 'frontend/package-lock.json'
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+      - name: Run build
+        run: npm run build
+      - name: Run tests
+        run: npm test || echo "No tests yet"
+
+  playwright: # Fixed indentation: jobs must be at the same level
+    name: Playwright Component Tests
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: 'frontend'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: 'frontend/package-lock.json'
+      
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23' # Reverted to a stable version
+      
+      - name: Create Backend Env File
+        run: mkdir -p ../go-backend && touch ../go-backend/.env
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Run build
-        run: npm run build
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
 
-      - name: Run tests
-        run: npm test || echo "No tests yet"
+      - name: Run Playwright Component Tests
+        run: npx playwright test -c playwright-ct.config.ts
 
-    playwright:
-      name: Playwright Component Tests
-      runs-on: ubuntu-latest
-      needs: build
-      timeout-minutes: 20 # CT tests are usually faster than E2E
-      defaults:
-        run:
-          working-directory: 'frontend'
-      steps:
-        - uses: actions/checkout@v4
-
-        - name: Set up Node.js
-          uses: actions/setup-node@v4
-          with:
-            node-version: "24"
-            cache: "npm"
-            cache-dependency-path: 'frontend/package-lock.json'
-
-        # Go setup adjusted to point to the parent's go-backend folder
-        - name: Setup Go
-          uses: actions/setup-go@v5
-          with:
-            go-version: '1.25'
-        
-        - name: Create Backend Env File
-          run: mkdir -p ../go-backend && touch ../go-backend/.env
-
-        - name: Install dependencies
-          run: npm ci --legacy-peer-deps
-
-        - name: Install Playwright Browsers
-          run: npx playwright install --with-deps
-
-        - name: Run Playwright Component Tests
-          # Use the specific component testing command
-          run: npx playwright test -c playwright-ct.config.ts
-
-        - uses: actions/upload-artifact@v4
-          if: always()
-          with:
-            name: playwright-report
-            path: frontend/playwright-report/
-            retention-days: 30
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 30
