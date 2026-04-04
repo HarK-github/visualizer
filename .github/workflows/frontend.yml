@@ -5,12 +5,12 @@ on:
     paths:
       - "frontend/**"
       - ".github/workflows/frontend.yml"
-    branches: [ 'main' ]
+    branches: [ 'Testing' ]
   pull_request:
     paths:
       - "frontend/**"
       - ".github/workflows/frontend.yml"
-    branches: [ 'main' ]
+    branches: [ 'Testing' ]
   workflow_dispatch: 
 permissions: read-all
 
