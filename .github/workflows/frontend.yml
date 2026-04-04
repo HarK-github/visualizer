@@ -11,8 +11,7 @@ on:
       - "frontend/**"
       - ".github/workflows/frontend.yml"
     branches: [ 'main' ]
-  workflow_dispatch: # Allows you to trigger the action manually
-
+  workflow_dispatch: 
 permissions: read-all
 
 jobs:
