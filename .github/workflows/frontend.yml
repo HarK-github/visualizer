@@ -11,6 +11,7 @@ on:
       - "frontend/**"
       - ".github/workflows/frontend.yml"
     branches: [ 'main' ]
+  workflow_dispatch:
 
 permissions: read-all
 
